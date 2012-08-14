@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ch2Ex1 The Basic Rectangle</title>
+<script src="modernizr-1.6.min.js"></script>
+
+<script type="text/javascript">
+
+/***************
+ Create canvas drawing paths 
+***************/
+
+window.addEventListener('load', eventWindowLoaded, false);	
+function eventWindowLoaded() {
+
+	canvasApp();
+}
+
+
+function canvasSupport () {
+  	return Modernizr.canvas;
+}
+
+
+function canvasApp(){
+
+
+	if (!canvasSupport()) {
+			 return;
+  	}else{
+	    var theCanvas = document.getElementById('canvas');
+	    var context = theCanvas.getContext('2d');
+	}
+
+	function aPoint(x,y)
+	{
+		this.x = x;
+		this.y = y;
+		
+		this.magx = function() {
+			return this.x*mag;
+		};
+		
+		this.magy = function() {
+			return this.y*mag;
+		};
+		
+		this.centerx = function() {
+			return this.x*mag + Math.ceil(mag/2);
+		};
+		
+		this.centery = function() {
+			return this.y*mag + Math.ceil(mag/2);
+		};
+	}
+
+	function dLine(x1,y1,x2,y2)
+	{	
+		context.beginPath();
+		context.moveTo(x1,y1);
+		context.lineTo(x2,y2);
+		context.stroke();
+		context.closePath();	
+	}
+
+	function eventMouseMove(event)
+	{
+		mouseX = event.layerX;
+		mouseY = event.layerY;
+		
+		if (mouseX < magSizex && mouseY < magSizey)
+		{ mouseValid = true;}
+		else
+		{ mouseValid = false;}
+
+		indexX = Math.floor(mouseX / mag);
+		indexY = Math.floor(mouseY / mag);
+		
+	}
+
+	function eventMouseDown(event)
+	{
+		if (mouseValid)
+		{
+			p = new aPoint(indexX,indexY);
+			paths[lineIndex][pathIndex[lineIndex]] = p;
+			pathIndex[lineIndex]++;
+		}
+	}
+
+	function drawPointer()
+	{
+		if (mouseValid)
+		{
+			context.fillStyle = '#777777';
+			context.fillRect(indexX*mag,indexY*mag,mag,mag);
+		}
+	}
+
+	function drawLine(val) {
+
+		context.translate(0,20);
+		context.fillText(val, 0, 0);
+	}
+
+	function drawCode() {
+		
+		context.fillStyle = '#000000';
+		context.font = '14px sans-serif';
+		context.textBaseline = 'bottom';
+
+		context.save();
+		context.translate(magSizex + size,size*2);
+		
+		for(i=0; i<lineIndex; i++)
+		{
+			drawLine("context.beginPath();");
+
+			for(j=0; j<pathIndex[i]; j++)
+			{
+				if (j == 0) {
+					drawLine("context.moveTo");
+				} else {
+					drawLine("context.lineTo");
+				}
+				drawLine("(" + paths[i][j].x + "," + paths[i][j].y + ");");
+			}
+			drawLine("context.stroke();");
+			drawLine("context.closePath();");
+			drawLine("");
+		}
+		context.restore();
+	}
+
+	function drawPaths() {
+
+		for(j=0; j<=lineIndex; j++)
+		{
+			if (pathIndex[j] > 0)
+			{
+				context.strokeStyle = '#ff5555'; 
+				context.lineWidth = mag;
+
+				context.beginPath();
+				context.moveTo(paths[j][0].centerx(),paths[j][0].centery());
+				for (i=1; i<pathIndex[j]; i++)
+				{
+					context.lineTo(paths[j][i].centerx(),paths[j][i].centery());
+				}
+				context.stroke();
+				context.closePath();
+		
+				for (i=0; i<pathIndex[j]; i++)
+				{
+					context.fillStyle = '#FF0000';
+					context.fillRect(paths[j][i].magx(),paths[j][i].magy(),mag,mag);
+				}
+	
+				context.strokeStyle = '#000000'; 
+				context.lineWidth = 1;
+				
+				context.save();
+				context.translate(magSizex + size,0)
+				context.beginPath();
+				context.moveTo(paths[j][0].x,paths[j][0].y);
+				
+				for (i=1; i<pathIndex[j]; i++)
+				{
+					context.lineTo(paths[j][i].x,paths[j][i].y);
+				}
+				context.stroke();
+				context.closePath();
+				context.restore();
+			}
+		}
+	}
+
+	function drawScreen() {
+
+		context.setTransform(1,0,0,1,0,0);
+
+		sizex = document.getElementById("sizex").value;
+		sizey = document.getElementById("sizey").value;
+		mag = document.getElementById("mag").value;
+	
+		magSizex = mag * sizex;
+		magSizey = mag * sizey
+	
+		//Box
+		context.fillStyle = "#FFFFFF";
+		context.fillRect(0,  0, theCanvas.width, theCanvas.height);
+
+		context.strokeStyle = '#000000'; 
+		context.lineWidth = 1;
+		context.strokeRect(0, 0, magSizex, magSizey);
+		context.strokeRect(magSizex + size, 0, sizex, sizey);
+
+		context.strokeStyle = '#bbbbbb';
+		context.lineWidth = 1;
+
+		for (var i=1; i<sizex; i++)
+		{dLine(i*mag,0,i*mag,magSizey);}
+
+		for (var i=1; i<sizey; i++)
+		{dLine(0,i*mag,magSizex,i*mag);}
+		
+		drawPointer();
+
+		drawPaths();
+		
+		drawCode();
+	}
+	
+	var mouseX = 0;
+	var mouseY = 0;
+	var indexX = 0;
+	var indexY = 0;
+	
+	var mouseValid = false;
+
+	var size = 40;
+	
+	var sizex = document.getElementById("sizex").value;
+	var sizey = document.getElementById("sizey").value;
+	var mag = document.getElementById("mag").value;	
+
+	var paths = new Array();
+	var lineIndex = 0;
+	paths[lineIndex] = new Array();
+
+	var keyPressList = [];
+	var bPressed = false;
+	
+	var pathIndex = new Array();
+	pathIndex[0] = 0;
+	
+	theCanvas.addEventListener('mousemove', eventMouseMove, false);
+	theCanvas.addEventListener('mousedown', eventMouseDown, false);
+	//theCanvas.addEventListener("onkeydown", eventKeyDown, false);
+
+	document.onkeydown = function(e) {
+		e = e?e:window.event;
+		keyPressList[e.keyCode] = true;
+		
+		if (!bPressed) {
+
+			lineIndex++;
+			pathIndex[lineIndex] = 0;
+			bPressed = true;
+			
+			paths[lineIndex] = new Array();
+		}
+	}
+
+	document.onkeyup = function(e) {
+		e = e?e:window.event;
+		bPressed = false;
+	}
+
+	setInterval(drawScreen, 30);
+}
+
+
+</script> 
+</head>
+<body>
+<div style="position: absolute; top: 30px; left: 50px;">
+Size X: <input type="text" id="sizex" size="5" value="40"/><br>
+Size Y: <input type="text" id="sizey" size="5" value="40"/><br>
+Magnification: <input type="text" id="mag" size="5" value="9"/><br><br>
+
+<canvas id="canvas" width="2000" height="2000">
+ Your browser does not support the HTML 5 Canvas. 
+</canvas>
+</div>
+</body>
+</html>
